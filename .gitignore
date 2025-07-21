@@ -10,3 +10,47 @@
 **/*.backup
 **/*.autosave
 **/*~
+
+# --- Build output ---
+**/build/
+**/Debug/
+**/Release/
+*.o
+*.d
+*.a
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.srec
+
+# --- IDE / Tools ---
+.vscode/
+*.code-workspace
+
+# --- STM32CubeMX ---
+*.ioc.backup
+*.mxproject
+
+# --- CMake ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build.ninja
+compile_commands.json
+CTestTestfile.cmake
+CPack*
+*.cmake
+
+# --- Backup and system files ---
+*~
+*.swp
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# --- Other ---
+Firmware/STM32L432XX_FLASH.ld

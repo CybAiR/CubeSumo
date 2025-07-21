@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define NUM_SENSORS (9) // How many analog sensors are used in the robot
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,6 +56,60 @@ static void MX_ADC1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Struct that associates an ADC channel with a pointer to its output variable
+typedef struct
+{
+    uint32_t channel;
+    uint32_t* value_ptr;
+} Sensor_t;
+
+// Variables used to store analog values read from sensors
+uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
+uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
+
+// Array that maps ADC channels to their corresponding sensor value variables
+Sensor_t sensors[NUM_SENSORS] =
+{
+    {ADC_CHANNEL_16, &adc_value_1},
+    {ADC_CHANNEL_11, &adc_value_2},
+    {ADC_CHANNEL_12, &adc_value_3},
+    {ADC_CHANNEL_7,  &adc_value_4},
+    {ADC_CHANNEL_15, &adc_value_5},
+    {ADC_CHANNEL_9,  &adc_value_6},
+    {ADC_CHANNEL_6,  &adc_value_7},
+    {ADC_CHANNEL_5,  &adc_value_8},
+    {ADC_CHANNEL_8,  &adc_value_9}
+};
+
+// Selects the specified ADC channel and prepares it for conversion
+void ADC_SetActiveChannel(ADC_HandleTypeDef *hadc, uint32_t AdcChannel)
+{
+  ADC_ChannelConfTypeDef sConfig = {0};
+  sConfig.Channel = AdcChannel;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+}
+
+// Reads values from all configured ADC channels and stores the results
+void UpdateAllSensors(void)
+{
+    for (int i = 0; i < NUM_SENSORS; i++)
+    {
+        ADC_SetActiveChannel(&hadc1, sensors[i].channel);
+        HAL_ADC_Start(&hadc1);
+
+        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+        {
+        	// Store the value directly in the variable pointed to by the sensor
+            *(sensors[i].value_ptr) = HAL_ADC_GetValue(&hadc1);
+        }
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -97,6 +151,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      UpdateAllSensors();
+      
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

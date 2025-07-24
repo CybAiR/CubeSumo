@@ -31,7 +31,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_SENSORS (9) // How many analog sensors are used in the robot
+#define NUM_SENSORS (9)           // How many analog sensors are used in the robot
+#define DEBOUNCE_THRESHOLD (5)    // Number of stable reads required to confirm a new button state
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,9 +65,23 @@ typedef struct
     uint32_t* value_ptr;
 } Sensor_t;
 
+// Struct that stores info about button state
+typedef struct
+{
+    uint8_t current;          //current debounced button state  <== use this for external usage
+    uint8_t previous;         //previous debounced state
+    uint8_t rising_edge;      //set to 1 for one loop cycle when a press is detected
+    uint8_t falling_edge;     //set to 1 for one loop cycle when a release is detected
+    uint8_t stable_state;     //internal filtered state
+    uint8_t debounce_counter; //counter for debounce filtering
+} ButtonState_t;
+
 // Variables used to store analog values read from sensors
 uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
 uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
+
+// Global variable that store all necessary information about the button state
+ButtonState_t button = {0};
 
 // Array that maps ADC channels to their corresponding sensor value variables
 Sensor_t sensors[NUM_SENSORS] =
@@ -111,6 +126,43 @@ void UpdateAllSensors(void)
     }
 }
 
+// Calculates the button state including filtering
+void UpdateButtonState(void)
+{
+    // Read raw button input
+    uint8_t raw_state = (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET) ? 1 : 0;
+
+    // Check if the raw state differs from the last confirmed stable state
+    if (raw_state != button.stable_state)
+    {
+        // Count how many times this new state was seen consecutively
+        button.debounce_counter++;
+
+        // If new state was long enough then accept it
+        if (button.debounce_counter >= DEBOUNCE_THRESHOLD)
+        {
+            button.previous = button.stable_state;
+            button.stable_state = raw_state;
+
+            // Edge detection
+            button.rising_edge  = (button.previous == 0 && button.stable_state == 1);
+            button.falling_edge = (button.previous == 1 && button.stable_state == 0);
+        }
+    }
+    else
+    {
+        // Reset debounce counter if state is sure
+        button.debounce_counter = 0;
+
+        // Reset edge flags
+        button.rising_edge = 0;
+        button.falling_edge = 0;
+    }
+
+    // Save debounced state for external use
+    button.current = button.stable_state;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -152,6 +204,7 @@ int main(void)
   while (1)
   {
       UpdateAllSensors();
+      UpdateButtonState();
       
     /* USER CODE END WHILE */
 

@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "movement.h" // Library for robot movement functions
 
 /* USER CODE END Includes */
 
@@ -31,6 +32,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define NUM_SENSORS (9)           // How many analog sensors are used in the robot
+#define DEBOUNCE_THRESHOLD (5)    // Number of stable reads required to confirm a new button state
 
 /* USER CODE END PD */
 
@@ -50,12 +53,155 @@ ADC_HandleTypeDef hadc1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Struct that associates an ADC channel with a pointer to its output variable
+typedef struct
+{
+    uint32_t channel;
+    uint32_t* value_ptr;
+} Sensor_t;
+
+// Struct that stores info about button state
+typedef struct
+{
+    uint8_t current;          //current debounced button state  <== use this for external usage
+    uint8_t previous;         //previous debounced state
+    uint8_t rising_edge;      //set to 1 for one loop cycle when a press is detected
+    uint8_t falling_edge;     //set to 1 for one loop cycle when a release is detected
+    uint8_t stable_state;     //internal filtered state
+    uint8_t debounce_counter; //counter for debounce filtering
+} ButtonState_t;
+
+// Enum for all states in state machine
+typedef enum
+{
+    STATE_IDLE,
+    STATE_WAIT_FOR_START,
+    STATE_FIGHT
+} RobotState_t;
+
+// Variables used to store analog values read from sensors
+uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
+uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
+
+// Global variable that store all necessary information about the button state
+ButtonState_t button = {0};
+
+// Variable tracking current movement direction
+Direction_t current_direction = DIR_STOP;
+
+// Global variables storing duty cycle 0-100% for left and right motors
+volatile uint8_t pwm_left = 0;
+volatile uint8_t pwm_right = 0;
+
+// Holder for current state in state machine
+RobotState_t current_state = STATE_IDLE;
+
+// Array that maps ADC channels to their corresponding sensor value variables
+Sensor_t sensors[NUM_SENSORS] =
+{
+    {ADC_CHANNEL_16, &adc_value_1},
+    {ADC_CHANNEL_11, &adc_value_2},
+    {ADC_CHANNEL_12, &adc_value_3},
+    {ADC_CHANNEL_7,  &adc_value_4},
+    {ADC_CHANNEL_15, &adc_value_5},
+    {ADC_CHANNEL_9,  &adc_value_6},
+    {ADC_CHANNEL_6,  &adc_value_7},
+    {ADC_CHANNEL_5,  &adc_value_8},
+    {ADC_CHANNEL_8,  &adc_value_9}
+};
+
+// Selects the specified ADC channel and prepares it for conversion
+void ADC_SetActiveChannel(ADC_HandleTypeDef *hadc, uint32_t AdcChannel)
+{
+  ADC_ChannelConfTypeDef sConfig = {0};
+  sConfig.Channel = AdcChannel;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+}
+
+// Reads values from all configured ADC channels and stores the results
+void UpdateAllSensors(void)
+{
+    for (int i = 0; i < NUM_SENSORS; i++)
+    {
+        ADC_SetActiveChannel(&hadc1, sensors[i].channel);
+        HAL_ADC_Start(&hadc1);
+
+        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+        {
+        	// Store the value directly in the variable pointed to by the sensor
+            *(sensors[i].value_ptr) = HAL_ADC_GetValue(&hadc1);
+        }
+    }
+}
+
+// Calculates the button state including filtering
+void UpdateButtonState(void)
+{
+    // Read raw button input
+    uint8_t raw_state = (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET) ? 1 : 0;
+
+    // Check if the raw state differs from the last confirmed stable state
+    if (raw_state != button.stable_state)
+    {
+        // Count how many times this new state was seen consecutively
+        button.debounce_counter++;
+
+        // If new state was long enough then accept it
+        if (button.debounce_counter >= DEBOUNCE_THRESHOLD)
+        {
+            button.previous = button.stable_state;
+            button.stable_state = raw_state;
+
+            // Edge detection
+            button.rising_edge  = (button.previous == 0 && button.stable_state == 1);
+            button.falling_edge = (button.previous == 1 && button.stable_state == 0);
+        }
+    }
+    else
+    {
+        // Reset debounce counter if state is sure
+        button.debounce_counter = 0;
+
+        // Reset edge flags
+        button.rising_edge = 0;
+        button.falling_edge = 0;
+    }
+
+    // Save debounced state for external use
+    button.current = button.stable_state;
+}
+
+// Turn LEDs under the robot on or off
+void LEDsOnOff(uint8_t state)
+{
+	if (state == 0)
+	{
+		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, GPIO_PIN_RESET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, GPIO_PIN_SET);
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -97,6 +243,38 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      // Update all sensors
+      UpdateAllSensors();
+      UpdateButtonState();
+
+      // STATE MACHINE
+      switch (current_state)
+      {
+        case STATE_IDLE:
+            // Here we put logic for one state
+            LEDsOnOff(0);
+            StopMotors();
+
+            // Here we check conditions when we want to go to the next state
+            if (button.rising_edge) // If button is pressed
+            {
+                current_state = STATE_WAIT_FOR_START; // Move to next state
+            }
+            break;
+
+        case STATE_WAIT_FOR_START:
+            // Here we put logic for waiting state
+            break;
+
+        case STATE_FIGHT:
+            // Here we put logic for fight state
+            break;
+
+        default:
+            // If we reach an unknown state, reset to idle
+            current_state = STATE_IDLE;
+            break;
+      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

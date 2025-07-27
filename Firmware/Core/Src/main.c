@@ -79,6 +79,14 @@ typedef struct
     uint8_t debounce_counter; //counter for debounce filtering
 } ButtonState_t;
 
+// Enum for all states in state machine
+typedef enum
+{
+    STATE_IDLE,
+    STATE_WAIT_FOR_START,
+    STATE_FIGHT
+} RobotState_t;
+
 // Variables used to store analog values read from sensors
 uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
 uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
@@ -92,6 +100,9 @@ Direction_t current_direction = DIR_STOP;
 // Global variables storing duty cycle 0-100% for left and right motors
 volatile uint8_t pwm_left = 0;
 volatile uint8_t pwm_right = 0;
+
+// Holder for current state in state machine
+RobotState_t current_state = STATE_IDLE;
 
 // Array that maps ADC channels to their corresponding sensor value variables
 Sensor_t sensors[NUM_SENSORS] =
@@ -232,15 +243,38 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      // Update all sensors
       UpdateAllSensors();
       UpdateButtonState();
 
-      MoveForward(50); // Example usage, move forward at 50% speed
-      LEDsOnOff(1); // Turn on LEDs
-      HAL_Delay(1000); // Keep moving for 1 second
-      RotateRight(50); // Rotate right at 50% speed
-      LEDsOnOff(0); // Turn off LEDs
-      HAL_Delay(1000); // Wait before next action
+      // STATE MACHINE
+      switch (current_state)
+      {
+        case STATE_IDLE:
+            // Here we put logic for one state
+            LEDsOnOff(0);
+            StopMotors();
+
+            // Here we check conditions when we want to go to the next state
+            if (button.rising_edge) // If button is pressed
+            {
+                current_state = STATE_WAIT_FOR_START; // Move to next state
+            }
+            break;
+
+        case STATE_WAIT_FOR_START:
+            // Here we put logic for waiting state
+            break;
+
+        case STATE_FIGHT:
+            // Here we put logic for fight state
+            break;
+
+        default:
+            // If we reach an unknown state, reset to idle
+            current_state = STATE_IDLE;
+            break;
+      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

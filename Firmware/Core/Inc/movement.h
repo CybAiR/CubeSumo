@@ -13,8 +13,8 @@ typedef enum {
     DIR_BACKWARD,
     DIR_LEFT,
     DIR_RIGHT,
-    DIR_ROTATE_LEFT,
     DIR_ROTATE_RIGHT,
+    DIR_ROTATE_LEFT,
     DIR_RIGHT_FORWARD,
     DIR_RIGHT_BACKWARD,
     DIR_LEFT_FORWARD,
@@ -36,5 +36,7 @@ void MoveRightWheelForward(uint8_t speed_percent);
 void MoveLeftWheelForward(uint8_t speed_percent);
 void MoveRightWheelBackward(uint8_t speed_percent);
 void MoveLeftWheelBackward(uint8_t speed_percent);
+void RotateRight(uint8_t speed_percent);
+void RotateLeft(uint8_t speed_percent);
 
 #endif // MOVEMENT_H

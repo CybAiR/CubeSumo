@@ -208,3 +208,53 @@ void MoveLeftWheelBackward(uint8_t speed_percent)
 
     current_direction = DIR_LEFT_BACKWARD;
 }
+
+// Spins robot right so it rotates in place at specified speed (0–100%)
+void RotateRight(uint8_t speed_percent)
+{
+    SafeDirectionChange(DIR_ROTATE_RIGHT);
+
+    HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_RESET);
+
+    uint8_t duty;
+
+    if (speed_percent > 100)
+    {
+        duty = SOFTWARE_PWM_PERIOD;
+    }
+    else
+    {
+        duty = (speed_percent * SOFTWARE_PWM_PERIOD) / 100;
+    }
+
+    pwm_left = duty;
+    pwm_right = duty;
+
+    current_direction = DIR_ROTATE_RIGHT;
+}
+
+// Spins robot left so it rotates in place at specified speed (0–100%)
+void RotateLeft(uint8_t speed_percent)
+{
+    SafeDirectionChange(DIR_ROTATE_LEFT);
+
+    HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_SET);
+
+    uint8_t duty;
+
+    if (speed_percent > 100)
+    {
+        duty = SOFTWARE_PWM_PERIOD;
+    }
+    else
+    {
+        duty = (speed_percent * SOFTWARE_PWM_PERIOD) / 100;
+    }
+
+    pwm_left = duty;
+    pwm_right = duty;
+
+    current_direction = DIR_ROTATE_LEFT;
+}

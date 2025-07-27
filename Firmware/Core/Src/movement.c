@@ -112,7 +112,7 @@ void MoveBackward(uint8_t speed_percent)
 // Moves right wheel forward at specified speed (0–100%)
 void MoveRightWheelForward(uint8_t speed_percent)
 {
-    SafeDirectionChange(DIR_LEFT_FORWARD);
+    SafeDirectionChange(DIR_RIGHT_FORWARD);
 
     HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_RESET);
@@ -131,13 +131,13 @@ void MoveRightWheelForward(uint8_t speed_percent)
     pwm_left = duty;
     pwm_right = 0;
 
-    current_direction = DIR_LEFT_FORWARD;
+    current_direction = DIR_RIGHT_FORWARD;
 }
 
 // Moves left wheel forward at specified speed (0–100%)
 void MoveLeftWheelForward(uint8_t speed_percent)
 {
-    SafeDirectionChange(DIR_RIGHT_FORWARD);
+    SafeDirectionChange(DIR_LEFT_FORWARD);
 
     HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_RESET);
@@ -156,13 +156,13 @@ void MoveLeftWheelForward(uint8_t speed_percent)
     pwm_left = 0;
     pwm_right = duty;
 
-    current_direction = DIR_RIGHT_FORWARD;
+    current_direction = DIR_LEFT_FORWARD;
 }
 
 // Moves right wheel backward at specified speed (0–100%)
 void MoveRightWheelBackward(uint8_t speed_percent)
 {
-    SafeDirectionChange(DIR_LEFT_BACKWARD);
+    SafeDirectionChange(DIR_RIGHT_BACKWARD);
 
     HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_RESET);
@@ -181,13 +181,13 @@ void MoveRightWheelBackward(uint8_t speed_percent)
     pwm_left = duty;
     pwm_right = 0;
 
-    current_direction = DIR_LEFT_BACKWARD;
+    current_direction = DIR_RIGHT_BACKWARD;
 }
 
 //moves left wheel backward at specified speed (0–100%)
 void MoveLeftWheelBackward(uint8_t speed_percent)
 {
-    SafeDirectionChange(DIR_RIGHT_BACKWARD);
+    SafeDirectionChange(DIR_LEFT_BACKWARD);
 
     HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_SET);
@@ -206,5 +206,5 @@ void MoveLeftWheelBackward(uint8_t speed_percent)
     pwm_left = 0;
     pwm_right = duty;
 
-    current_direction = DIR_RIGHT_BACKWARD;
+    current_direction = DIR_LEFT_BACKWARD;
 }

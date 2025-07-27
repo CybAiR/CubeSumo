@@ -15,10 +15,10 @@ typedef enum {
     DIR_RIGHT,
     DIR_ROTATE_LEFT,
     DIR_ROTATE_RIGHT,
-    DIR_LEFT_FORWARD,
-    DIR_LEFT_BACKWARD,
     DIR_RIGHT_FORWARD,
-    DIR_RIGHT_BACKWARD
+    DIR_RIGHT_BACKWARD,
+    DIR_LEFT_FORWARD,
+    DIR_LEFT_BACKWARD
 } Direction_t;
 
 // External declarations of global variables defined in main.c

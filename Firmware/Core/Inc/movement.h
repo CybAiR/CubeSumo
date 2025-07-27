@@ -27,10 +27,14 @@ extern volatile uint8_t pwm_right;
 extern Direction_t current_direction;
 
 // Function declarations
+void SoftwarePWM_Loop(void);
 void StopMotors(void);
 void SafeDirectionChange(Direction_t new_dir);
-void SoftwarePWM_Loop(void);
 void MoveForward(uint8_t speed_percent);
 void MoveBackward(uint8_t speed_percent);
+void MoveRightWheelForward(uint8_t speed_percent);
+void MoveLeftWheelForward(uint8_t speed_percent);
+void MoveRightWheelBackward(uint8_t speed_percent);
+void MoveLeftWheelBackward(uint8_t speed_percent);
 
 #endif // MOVEMENT_H

@@ -218,7 +218,7 @@ int main(void)
 
       MoveForward(50); // Example usage, move forward at 50% speed
       HAL_Delay(1000); // Keep moving for 1 second
-      MoveBackward(20); // Move backward at 50% speed
+      MoveLeftWheelBackward(50); // Move left wheel backward at 50% speed
       HAL_Delay(1000); // Wait before next action
     /* USER CODE END WHILE */
 

@@ -24,6 +24,7 @@
 *.map
 *.lst
 *.srec
+*ninja*
 
 # --- IDE / Tools ---
 .vscode/

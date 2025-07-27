@@ -173,6 +173,25 @@ void UpdateButtonState(void)
     button.current = button.stable_state;
 }
 
+// Turn LEDs under the robot on or off
+void LEDsOnOff(uint8_t state)
+{
+	if (state == 0)
+	{
+		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, GPIO_PIN_RESET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, GPIO_PIN_SET);
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -217,8 +236,10 @@ int main(void)
       UpdateButtonState();
 
       MoveForward(50); // Example usage, move forward at 50% speed
+      LEDsOnOff(1); // Turn on LEDs
       HAL_Delay(1000); // Keep moving for 1 second
       RotateRight(50); // Rotate right at 50% speed
+      LEDsOnOff(0); // Turn off LEDs
       HAL_Delay(1000); // Wait before next action
     /* USER CODE END WHILE */
 

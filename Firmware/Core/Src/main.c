@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "movement.h" // Library for robot movement functions
 
 /* USER CODE END Includes */
 
@@ -33,7 +34,7 @@
 /* USER CODE BEGIN PD */
 #define NUM_SENSORS (9)           // How many analog sensors are used in the robot
 #define DEBOUNCE_THRESHOLD (5)    // Number of stable reads required to confirm a new button state
-#define SOFTWARE_PWM_PERIOD (5)   // Software PWM period in ticks - the less the faster is the PWM freq
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +53,7 @@ ADC_HandleTypeDef hadc1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -77,30 +79,12 @@ typedef struct
     uint8_t debounce_counter; //counter for debounce filtering
 } ButtonState_t;
 
-// Enum representing current robot direction state
-typedef enum {
-    DIR_STOP,
-    DIR_FORWARD,
-    DIR_BACKWARD,
-    DIR_LEFT,
-    DIR_RIGHT,
-    DIR_ROTATE_LEFT,
-    DIR_ROTATE_RIGHT,
-    DIR_LEFT_FORWARD,
-    DIR_LEFT_BACKWARD,
-    DIR_RIGHT_FORWARD,
-    DIR_RIGHT_BACKWARD
-} Direction_t;
-
 // Variables used to store analog values read from sensors
 uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
 uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
 
 // Global variable that store all necessary information about the button state
 ButtonState_t button = {0};
-
-// PWM counter incremented every 1ms from SysTick
-static uint8_t pwm_counter = 0;
 
 // Variable tracking current movement direction
 Direction_t current_direction = DIR_STOP;
@@ -189,108 +173,6 @@ void UpdateButtonState(void)
     button.current = button.stable_state;
 }
 
-// Software based PWM controller - should be called every 1ms from SysTick_Handler :)
-// We need to use this function after HAL_IncTick() in SysTick_Handler in stm32l4xx_it.c file !!!
-void SoftwarePWM_Loop(void)
-{
-    pwm_counter++;
-    if (pwm_counter >= SOFTWARE_PWM_PERIOD)
-    {
-    	pwm_counter = 0;
-    }
-
-
-    //left motor PWM
-    if (pwm_counter < pwm_left)
-    {
-    	HAL_GPIO_WritePin(EN_LEFT_GPIO_Port, EN_LEFT_Pin, GPIO_PIN_SET);
-    }
-    else
-    {
-    	HAL_GPIO_WritePin(EN_LEFT_GPIO_Port, EN_LEFT_Pin, GPIO_PIN_RESET);
-    }
-
-    //right motor PWM
-    if (pwm_counter < pwm_right)
-    {
-    	HAL_GPIO_WritePin(EN_RIGHT_GPIO_Port, EN_RIGHT_Pin, GPIO_PIN_SET);
-    }
-    else
-    {
-    	HAL_GPIO_WritePin(EN_RIGHT_GPIO_Port, EN_RIGHT_Pin, GPIO_PIN_RESET);
-    }
-}
-
-// Stops both motors by disabling the enable pins
-void StopMotors(void)
-{
-    HAL_GPIO_WritePin(EN_LEFT_GPIO_Port, EN_LEFT_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(EN_RIGHT_GPIO_Port, EN_RIGHT_Pin, GPIO_PIN_RESET);
-    pwm_left = 0;
-    pwm_right = 0;
-    current_direction = DIR_STOP;
-}
-
-// Stops motors briefly if direction is changing to avoid shoot-through
-void SafeDirectionChange(Direction_t new_dir)
-{
-    if (current_direction != DIR_STOP && current_direction != new_dir)
-    {
-        StopMotors();
-        HAL_Delay(100); // Dead time to allow safe switching
-    }
-}
-
-// Moves robot forward at specified speed (0–100%)
-void MoveForward(uint8_t speed_percent)
-{
-    SafeDirectionChange(DIR_FORWARD);
-
-    HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_RESET);
-
-    uint8_t duty;
-
-    if (speed_percent > 100)
-    {
-        duty = SOFTWARE_PWM_PERIOD;
-    }
-    else
-    {
-        duty = (speed_percent * SOFTWARE_PWM_PERIOD) / 100;
-    }
-
-    pwm_left = duty;
-    pwm_right = duty;
-
-    current_direction = DIR_FORWARD;
-}
-
-// Moves robot backward at specified speed (0–100%)
-void MoveBackward(uint8_t speed_percent)
-{
-    SafeDirectionChange(DIR_BACKWARD);
-
-    HAL_GPIO_WritePin(PHASE_LEFT_GPIO_Port, PHASE_LEFT_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(PHASE_RIGHT_GPIO_Port, PHASE_RIGHT_Pin, GPIO_PIN_SET);
-
-    uint8_t duty;
-
-    if (speed_percent > 100)
-    {
-        duty = SOFTWARE_PWM_PERIOD;
-    }
-    else
-    {
-        duty = (speed_percent * SOFTWARE_PWM_PERIOD) / 100;
-    }
-
-    pwm_left = duty;
-    pwm_right = duty;
-
-    current_direction = DIR_BACKWARD;
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -336,7 +218,7 @@ int main(void)
 
       MoveForward(50); // Example usage, move forward at 50% speed
       HAL_Delay(1000); // Keep moving for 1 second
-      MoveBackward(50); // Move backward at 50% speed
+      MoveBackward(20); // Move backward at 50% speed
       HAL_Delay(1000); // Wait before next action
     /* USER CODE END WHILE */
 

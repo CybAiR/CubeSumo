@@ -43,6 +43,10 @@
 #define BACKWARD_TIME_MS (1000)             // Time to move backward when line detected (ms)
 #define MIN_ROTATE_TIME_MS (200)            // Minimum rotation time (ms)
 #define MAX_ROTATE_TIME_MS (800)            // Maximum rotation time (ms)
+
+// OPPONENT DETECTION DEFINES
+#define OPPONENT_DETECTION_THRESHOLD (1000)  // ADC value threshold for opponent detection
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -336,6 +340,20 @@ void LineDetectionHandler(void)
     }
 }
 
+// Check if opponent is detected by any of the front/side sensors
+uint8_t OpponentDetected(void)
+{
+    if (adc_value_1 > OPPONENT_DETECTION_THRESHOLD || 
+        adc_value_2 > OPPONENT_DETECTION_THRESHOLD || 
+        adc_value_3 > OPPONENT_DETECTION_THRESHOLD || 
+        adc_value_4 > OPPONENT_DETECTION_THRESHOLD || 
+        adc_value_5 > OPPONENT_DETECTION_THRESHOLD)
+    {
+        return 1;
+    }
+    return 0;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -407,6 +425,14 @@ int main(void)
             // Check line detection BEFORE issuing movement command
             LineDetectionHandler();
 
+            // Check if opponent is detected by front/side sensors
+            if (OpponentDetected())
+            {
+                // Opponent found - switch to fight mode
+                current_state = STATE_FIGHT;
+                break;
+            }
+
             // Only if there is no active line detection, move forward
             if (line_state == LINE_STATE_MONITORING)
             {
@@ -415,7 +441,7 @@ int main(void)
             break;
 
         case STATE_FIGHT:
-            
+
             break;
 
         default:

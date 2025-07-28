@@ -32,9 +32,17 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_SENSORS (9)           // How many analog sensors are used in the robot
-#define DEBOUNCE_THRESHOLD (5)    // Number of stable reads required to confirm a new button state
 
+// SENSOR DEFINES
+#define NUM_SENSORS (9)                     // How many analog sensors are used in the robot
+#define DEBOUNCE_THRESHOLD (5)              // Number of stable reads required to confirm a new button state
+
+// LINE DETECTION DEFINES
+#define LINE_DETECTION_THRESHOLD (70)       // ADC value threshold for line detection
+#define LINE_DETECTION_CONFIRMATIONS (3)    // Number of consecutive detections required to confirm line
+#define BACKWARD_TIME_MS (1000)             // Time to move backward when line detected (ms)
+#define MIN_ROTATE_TIME_MS (200)            // Minimum rotation time (ms)
+#define MAX_ROTATE_TIME_MS (800)            // Maximum rotation time (ms)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,8 +92,17 @@ typedef enum
 {
     STATE_IDLE,
     STATE_WAIT_FOR_START,
+    STATE_SEARCH,
     STATE_FIGHT
 } RobotState_t;
+
+// Enum for line detection handler states
+typedef enum
+{
+    LINE_STATE_MONITORING,    // Normal state - monitoring for line
+    LINE_STATE_BACKING_UP,    // Moving backward after line detection
+    LINE_STATE_ROTATING       // Rotating to avoid line again
+} LineDetectionState_t;
 
 // Variables used to store analog values read from sensors
 uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
@@ -103,6 +120,13 @@ volatile uint8_t pwm_right = 0;
 
 // Holder for current state in state machine
 RobotState_t current_state = STATE_IDLE;
+
+// Line detection handler variables
+LineDetectionState_t line_state = LINE_STATE_MONITORING;
+uint32_t line_action_start_time = 0;    // Time when line action started
+uint32_t line_rotate_duration = 0;      // Duration of rotation action
+uint8_t line_rotate_direction = 0;      // 0 = left, 1 = right
+uint8_t line_detection_counter = 0;     // Counter for filtering line detection noise
 
 // Array that maps ADC channels to their corresponding sensor value variables
 Sensor_t sensors[NUM_SENSORS] =
@@ -203,6 +227,115 @@ void LEDsOnOff(uint8_t state)
 	}
 }
 
+// Robot behavior when a line is detected
+void LineDetectionHandler(void)
+{
+    // Get current time for timing actions
+    uint32_t current_time = HAL_GetTick();
+    
+    // Check if any of the line sensors detected a line
+    uint8_t line_detected_raw = 0;
+    
+    if (adc_value_6 > LINE_DETECTION_THRESHOLD || 
+        adc_value_7 > LINE_DETECTION_THRESHOLD || 
+        adc_value_8 > LINE_DETECTION_THRESHOLD || 
+        adc_value_9 > LINE_DETECTION_THRESHOLD)
+    {
+        line_detected_raw = 1;
+    }
+
+    // Filter line detection - require several consecutive confirmations
+    uint8_t line_detected_filtered = 0;
+    
+    if (line_detected_raw)
+    {
+        // If a line is detected, increment the counter
+        line_detection_counter++;
+
+        // If we have enough confirmed detections, consider it valid
+        if (line_detection_counter >= LINE_DETECTION_CONFIRMATIONS)
+        {
+            line_detected_filtered = 1;
+        }
+    }
+    else
+    {
+        // If no detection, reset counter
+        line_detection_counter = 0;
+    }
+    
+    switch (line_state)
+    {
+        case LINE_STATE_MONITORING:
+            if (line_detected_filtered)
+            {
+                // Line detected after filtering - start the escape sequence
+                line_action_start_time = current_time;
+                line_state = LINE_STATE_BACKING_UP;
+
+                // Immediately start moving backward
+                MoveBackward(20);
+
+                // Reset counter after use
+                line_detection_counter = 0;
+            }
+            // If no line is detected, do nothing
+            break;
+            
+        case LINE_STATE_BACKING_UP:
+            // Continue moving backward for a set time
+            MoveBackward(20);
+
+            // Reset counter while backing up (not checking line)
+            line_detection_counter = 0;
+            
+            if (current_time - line_action_start_time >= BACKWARD_TIME_MS)
+            {
+                // Backward time elapsed, transition to rotating
+                line_state = LINE_STATE_ROTATING;
+                line_action_start_time = current_time;
+
+                // Generate random rotation time and direction ONLY HERE
+                line_rotate_duration = MIN_ROTATE_TIME_MS + (HAL_GetTick() % (MAX_ROTATE_TIME_MS - MIN_ROTATE_TIME_MS));
+                line_rotate_direction = HAL_GetTick() % 2;  // 0 or 1
+            }
+            break;
+            
+        case LINE_STATE_ROTATING:
+            // Rotate robot in random direction for random time
+            if (line_rotate_direction == 0)
+            {
+                RotateLeft(20);
+            }
+            else
+            {
+                RotateRight(20);
+            }
+
+            // Reset counter while rotating (not checking line)
+            line_detection_counter = 0;
+            
+            if (current_time - line_action_start_time >= line_rotate_duration)
+            {
+                // Rotation finished, return to monitoring
+                line_state = LINE_STATE_MONITORING;
+
+                // Clear rotation variables for safety
+                line_rotate_duration = 0;
+                line_rotate_direction = 0;
+            }
+            break;
+            
+        default:
+            // If we reach an unknown state, reset to monitoring
+            line_state = LINE_STATE_MONITORING;
+            line_rotate_duration = 0;
+            line_rotate_direction = 0;
+            line_detection_counter = 0;
+            break;
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -256,18 +389,33 @@ int main(void)
             StopMotors();
 
             // Here we check conditions when we want to go to the next state
-            if (button.rising_edge) // If button is pressed
-            {
-                current_state = STATE_WAIT_FOR_START; // Move to next state
-            }
+            current_state = STATE_WAIT_FOR_START;
+
             break;
 
         case STATE_WAIT_FOR_START:
-            // Here we put logic for waiting state
+            LEDsOnOff(1);
+
+            // Commented for testing without button
+            //if (button.falling_edge)
+            //{
+                current_state = STATE_SEARCH;
+            //}
+            break;
+
+        case STATE_SEARCH:
+            // Check line detection BEFORE issuing movement command
+            LineDetectionHandler();
+
+            // Only if there is no active line detection, move forward
+            if (line_state == LINE_STATE_MONITORING)
+            {
+                MoveForward(20);
+            }
             break;
 
         case STATE_FIGHT:
-            // Here we put logic for fight state
+            
             break;
 
         default:

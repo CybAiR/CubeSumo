@@ -110,7 +110,7 @@ typedef enum
 
 // Variables used to store analog values read from sensors
 uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
-uint32_t adc_value_5, adc_value_6, adc_value_7, adc_value_8, adc_value_9;
+uint32_t adc_value_5, FrontRightLightSensor, BackRightLightSensor, FrontLeftLightSensor, BackLeftLightSensor;
 
 // Global variable that store all necessary information about the button state
 ButtonState_t button = {0};
@@ -140,10 +140,10 @@ Sensor_t sensors[NUM_SENSORS] =
     {ADC_CHANNEL_12, &adc_value_3},
     {ADC_CHANNEL_7,  &adc_value_4},
     {ADC_CHANNEL_15, &adc_value_5},
-    {ADC_CHANNEL_9,  &adc_value_6},
-    {ADC_CHANNEL_6,  &adc_value_7},
-    {ADC_CHANNEL_5,  &adc_value_8},
-    {ADC_CHANNEL_8,  &adc_value_9}
+    {ADC_CHANNEL_9,  &FrontRightLightSensor},  // adc_value_6 -> FrontRightLightSensor
+    {ADC_CHANNEL_6,  &BackRightLightSensor},   // adc_value_7 -> BackRightLightSensor
+    {ADC_CHANNEL_5,  &FrontLeftLightSensor},   // adc_value_8 -> FrontLeftLightSensor
+    {ADC_CHANNEL_8,  &BackLeftLightSensor}     // adc_value_9 -> BackLeftLightSensor
 };
 
 // Selects the specified ADC channel and prepares it for conversion
@@ -240,10 +240,10 @@ void LineDetectionHandler(void)
     // Check if any of the line sensors detected a line
     uint8_t line_detected_raw = 0;
     
-    if (adc_value_6 > LINE_DETECTION_THRESHOLD || 
-        adc_value_7 > LINE_DETECTION_THRESHOLD || 
-        adc_value_8 > LINE_DETECTION_THRESHOLD || 
-        adc_value_9 > LINE_DETECTION_THRESHOLD)
+    if (FrontRightLightSensor > LINE_DETECTION_THRESHOLD || 
+        BackRightLightSensor > LINE_DETECTION_THRESHOLD || 
+        FrontLeftLightSensor > LINE_DETECTION_THRESHOLD || 
+        BackLeftLightSensor > LINE_DETECTION_THRESHOLD)
     {
         line_detected_raw = 1;
     }

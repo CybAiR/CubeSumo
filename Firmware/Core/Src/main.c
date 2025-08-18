@@ -41,8 +41,8 @@
 #define LINE_DETECTION_THRESHOLD (70)       // ADC value threshold for line detection
 #define LINE_DETECTION_CONFIRMATIONS (3)    // Number of consecutive detections required to confirm line
 #define BACKWARD_TIME_MS (1000)             // Time to move backward when line detected (ms)
-#define MIN_ROTATE_TIME_MS (200)            // Minimum rotation time (ms)
-#define MAX_ROTATE_TIME_MS (800)            // Maximum rotation time (ms)
+#define MIN_ROTATE_TIME_MS (500)            // Minimum rotation time (ms)
+#define MAX_ROTATE_TIME_MS (1500)            // Maximum rotation time (ms)
 
 // OPPONENT DETECTION DEFINES
 #define OPPONENT_DETECTION_THRESHOLD (1000)  // ADC value threshold for opponent detection
@@ -426,12 +426,12 @@ int main(void)
             LineDetectionHandler();
 
             // Check if opponent is detected by front/side sensors
-            if (OpponentDetected())
-            {
-                // Opponent found - switch to fight mode
-                current_state = STATE_FIGHT;
-                break;
-            }
+            // if (OpponentDetected())
+            // {
+            //     // Opponent found - switch to fight mode
+            //     current_state = STATE_FIGHT;
+            //     break;
+            // }
 
             // Only if there is no active line detection, move forward
             if (line_state == LINE_STATE_MONITORING)

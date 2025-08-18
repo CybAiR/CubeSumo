@@ -109,8 +109,8 @@ typedef enum
 } LineDetectionState_t;
 
 // Variables used to store analog values read from sensors
-uint32_t adc_value_1, adc_value_2, adc_value_3, adc_value_4;
-uint32_t adc_value_5, FrontRightLightSensor, BackRightLightSensor, FrontLeftLightSensor, BackLeftLightSensor;
+uint32_t FrontRightDistanceSensor, RightDistanceSensor, FrontCenterDistanceSensor, FrontLeftDistanceSensor, LeftDistanceSensor;
+uint32_t FrontRightLightSensor, BackRightLightSensor, FrontLeftLightSensor, BackLeftLightSensor;
 
 // Global variable that store all necessary information about the button state
 ButtonState_t button = {0};
@@ -135,15 +135,15 @@ uint8_t line_detection_counter = 0;     // Counter for filtering line detection 
 // Array that maps ADC channels to their corresponding sensor value variables
 Sensor_t sensors[NUM_SENSORS] =
 {
-    {ADC_CHANNEL_16, &adc_value_1},
-    {ADC_CHANNEL_11, &adc_value_2},
-    {ADC_CHANNEL_12, &adc_value_3},
-    {ADC_CHANNEL_7,  &adc_value_4},
-    {ADC_CHANNEL_15, &adc_value_5},
-    {ADC_CHANNEL_9,  &FrontRightLightSensor},  // adc_value_6 -> FrontRightLightSensor
-    {ADC_CHANNEL_6,  &BackRightLightSensor},   // adc_value_7 -> BackRightLightSensor
-    {ADC_CHANNEL_5,  &FrontLeftLightSensor},   // adc_value_8 -> FrontLeftLightSensor
-    {ADC_CHANNEL_8,  &BackLeftLightSensor}     // adc_value_9 -> BackLeftLightSensor
+    {ADC_CHANNEL_16, &FrontRightDistanceSensor},   // adc_value_1 -> FrontRightDistanceSensor
+    {ADC_CHANNEL_11, &RightDistanceSensor},        // adc_value_2 -> RightDistanceSensor
+    {ADC_CHANNEL_12, &FrontCenterDistanceSensor},  // adc_value_3 -> FrontCenterDistanceSensor
+    {ADC_CHANNEL_7,  &FrontLeftDistanceSensor},    // adc_value_4 -> FrontLeftDistanceSensor
+    {ADC_CHANNEL_15, &LeftDistanceSensor},         // adc_value_5 -> LeftDistanceSensor
+    {ADC_CHANNEL_9,  &FrontRightLightSensor},      // adc_value_6 -> FrontRightLightSensor
+    {ADC_CHANNEL_6,  &BackRightLightSensor},       // adc_value_7 -> BackRightLightSensor
+    {ADC_CHANNEL_5,  &FrontLeftLightSensor},       // adc_value_8 -> FrontLeftLightSensor
+    {ADC_CHANNEL_8,  &BackLeftLightSensor}         // adc_value_9 -> BackLeftLightSensor
 };
 
 // Selects the specified ADC channel and prepares it for conversion
@@ -343,11 +343,11 @@ void LineDetectionHandler(void)
 // Check if opponent is detected by any of the front/side sensors
 uint8_t OpponentDetected(void)
 {
-    if (adc_value_1 > OPPONENT_DETECTION_THRESHOLD || 
-        adc_value_2 > OPPONENT_DETECTION_THRESHOLD || 
-        adc_value_3 > OPPONENT_DETECTION_THRESHOLD || 
-        adc_value_4 > OPPONENT_DETECTION_THRESHOLD || 
-        adc_value_5 > OPPONENT_DETECTION_THRESHOLD)
+    if (FrontRightDistanceSensor > OPPONENT_DETECTION_THRESHOLD || 
+        RightDistanceSensor > OPPONENT_DETECTION_THRESHOLD || 
+        FrontCenterDistanceSensor > OPPONENT_DETECTION_THRESHOLD || 
+        FrontLeftDistanceSensor > OPPONENT_DETECTION_THRESHOLD || 
+        LeftDistanceSensor > OPPONENT_DETECTION_THRESHOLD)
     {
         return 1;
     }

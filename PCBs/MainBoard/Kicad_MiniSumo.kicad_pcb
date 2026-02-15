@@ -6313,15 +6313,6 @@
 		(uuid "0570f569-1fe5-49f5-957b-7e73963d97c5")
 	)
 	(via
-		(at 138.65 83.05)
-		(size 0.6)
-		(drill 0.3)
-		(layers "F.Cu" "B.Cu")
-		(free yes)
-		(net 40)
-		(uuid "3c7305d0-2906-49ba-9d54-316a48697ccc")
-	)
-	(via
 		(at 125.75 79.6)
 		(size 0.6)
 		(drill 0.3)

@@ -4610,19 +4610,6 @@
 			(justify left bottom)
 		)
 	)
-	(gr_text "CHANGE PADS TO THERMAL RELEASES IN NEXT VERSION!!!"
-		(at 130.556 62.103 0)
-		(layer "F.Fab")
-		(uuid "0602eba3-b19e-495b-8849-6cf6cbb66a73")
-		(effects
-			(font
-				(size 1.5 1.5)
-				(thickness 0.3)
-				(bold yes)
-			)
-			(justify left bottom)
-		)
-	)
 	(gr_text "750mA\n"
 		(at 146.875 69.2 0)
 		(layer "F.Fab")
@@ -4634,21 +4621,8 @@
 			)
 		)
 	)
-	(gr_text "MAKE BIGGER THTs (to the size of STM one)"
-		(at 136.398 55.753 0)
-		(layer "F.Fab")
-		(uuid "2b01aaf1-021a-412e-9803-caa211151690")
-		(effects
-			(font
-				(size 1.5 1.5)
-				(thickness 0.3)
-				(bold yes)
-			)
-			(justify left bottom)
-		)
-	)
 	(gr_text "REMOVE CN16 ON NUCLEO BOARD BEFORE SOLDIERING"
-		(at 131.572 59.055 0)
+		(at 131.99 62.66 0)
 		(layer "F.Fab")
 		(uuid "302e2320-f45d-47fb-807b-ab0fd57e9beb")
 		(effects

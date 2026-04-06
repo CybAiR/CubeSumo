@@ -4634,6 +4634,19 @@
 			(justify left bottom)
 		)
 	)
+	(gr_text "Change Nucleo into a normal STM32 and give NORMAL PWM to the motors"
+		(at 122.12 59.82 0)
+		(layer "F.Fab")
+		(uuid "6363a08e-ecdf-48fb-a9b5-1ded0885d916")
+		(effects
+			(font
+				(size 1.5 1.5)
+				(thickness 0.3)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+	)
 	(gr_text "750mA\n"
 		(at 147.025 80.1 0)
 		(layer "F.Fab")
